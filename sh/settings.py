@@ -113,16 +113,17 @@ WSGI_APPLICATION = 'sh.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'sh_db',        # nom de ta base
-        'USER': 'root',         # utilisateur XAMPP par défaut
-        'PASSWORD': '',         # mot de passe vide
-        'HOST': '127.0.0.1',    # ou localhost
-        'PORT': '3306',         # port MySQL par défaut
+        'NAME': 'sh_db',  # ton nom de base RDS
+        'USER': 'admin',  # ton username RDS
+        'PASSWORD': 'Daasmaaoune123_',
+        'HOST': 'database-2.cb8goaycmh3z.eu-north-1.rds.amazonaws.com',
+        'PORT': '3306',
         'OPTIONS': {
             'charset': 'utf8mb4',
         },
     }
 }
+
 
 
 
