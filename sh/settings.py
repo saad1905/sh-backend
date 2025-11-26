@@ -64,7 +64,7 @@ MIDDLEWARE = [
 ]
 
 
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+# ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
 
 CORS_ALLOW_CREDENTIALS = True  # ✅ obligatoire pour les cookies de session
 CORS_ALLOWED_ORIGINS = [
