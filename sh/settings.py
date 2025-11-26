@@ -71,6 +71,7 @@ CORS_ALLOW_CREDENTIALS = True  # ✅ obligatoire pour les cookies de session
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "https://sh-frontend-9oo7.onrender.com"
 ]
 
 REST_FRAMEWORK = {
