@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-h4_b3+8aa9zplt68!(ww+b9cx+0-(y8lcck-6o5h!yy6_4u^y='
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 import os
 
@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'market',
-    'drf_yasg'
+    'drf_yasg',
+    "storages"
 ]
 
 MIDDLEWARE = [
@@ -80,14 +81,14 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
     ],
 }
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+# CSRF_TRUSTED_ORIGINS = [
+#     "http://localhost:3000",
+#     "http://127.0.0.1:3000",
+# ]
 ROOT_URLCONF = 'sh.urls'
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# MEDIA_URL = '/media/'
+# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 TEMPLATES = [
     {
@@ -161,7 +162,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+# STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -169,13 +170,13 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'market.User'
 # 🔹 Autoriser les credentials entre frontend et backend
-CORS_ALLOW_CREDENTIALS = True
+# CORS_ALLOW_CREDENTIALS = True
 
 # 🔹 L'origine de ton frontend React
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+# CORS_ALLOWED_ORIGINS = [
+#     "http://localhost:3000",
+#     "http://127.0.0.1:3000",
+# ]
 
 # 🔹 Autoriser l’envoi de cookies pour ces origines
 CSRF_TRUSTED_ORIGINS = [
@@ -193,3 +194,33 @@ SESSION_ENGINE = "django.contrib.sessions.backends.db"
 PAYPAL_CLIENT_ID = "ATol-P7H3Er4lG8CxaZDhKlL55rEA8t_l4Lpt4nYaMSiInxjavSQG4hyAST3YI4p89e4Vj2DTUaEg2sZ"
 PAYPAL_SECRET = "ELOQ9aIfci8-w5d_yZ05l4Ket1H_fmtoGL5p8ilL4_cRSJkqUEuLph2sqbRMbJX3f417L0vJH1JDLOcm"
 PAYPAL_API_BASE = "https://api-m.sandbox.paypal.com"
+
+# AWS S3 Storage
+AWS_STORAGE_BUCKET_NAME = "sh-backend-static"  # <-- ton vrai bucket S3
+AWS_S3_REGION_NAME = "eu-north-1"
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+
+# Domain S3 perso
+AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
+
+# Désactiver signature dans l’URL (fichiers publics)
+AWS_QUERYSTRING_AUTH = False
+
+# Empêche S3 d’écraser les fichiers
+AWS_S3_FILE_OVERWRITE = False
+
+# Obligatoire pour éviter les erreurs ACL
+AWS_DEFAULT_ACL = None
+
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    },
+    "staticfiles": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    },
+}
+
+STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
+MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
