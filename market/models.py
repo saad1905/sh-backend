@@ -104,6 +104,11 @@ class Payment(models.Model):
         ('CANCELLED', 'Annulé'),
     ]
 
+    PAYMENT_METHOD = [
+        ('paypal', 'PayPal'),
+        ('stripe', 'Stripe'),
+    ]
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -118,12 +123,29 @@ class Payment(models.Model):
         related_name='payments'
     )
 
+    # =====================
+    # 🔑 Identifiants paiement
+    # =====================
     paypal_order_id = models.CharField(
         max_length=255,
-        help_text="ID de commande retourné par PayPal",
+        blank=True,
+        null=True,
         unique=True
     )
 
+    stripe_payment_intent_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        unique=True
+    )
+
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHOD
+    )
+
+    # =====================
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=10, default='USD')
 
@@ -133,14 +155,15 @@ class Payment(models.Model):
         default='PENDING'
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
     payer_email = models.EmailField(blank=True, null=True)
     payer_id = models.CharField(max_length=255, blank=True, null=True)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     def __str__(self):
-        return f"Paiement {self.paypal_order_id} - {self.status}"
+        ref = self.paypal_order_id or self.stripe_payment_intent_id
+        return f"Paiement {ref} ({self.payment_method}) - {self.status}"
 
     class Meta:
         ordering = ['-created_at']

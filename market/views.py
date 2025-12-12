@@ -9,6 +9,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.decorators import api_view
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+import stripe
 
 
 
@@ -319,10 +320,12 @@ class PaymentViewSet(viewsets.ModelViewSet):
             user=user,
             cart=cart,
             paypal_order_id=order_id,
-            amount=amount_mad,  # on garde l’original en MAD
+            payment_method="paypal",   # ✅ OBLIGATOIRE
+            amount=amount_mad,
             currency="MAD",
             status="PENDING"
         )
+
 
         approval_url = next(
             (link["href"] for link in data["links"] if link["rel"] == "approve"),
@@ -371,3 +374,84 @@ class PaymentViewSet(viewsets.ModelViewSet):
             "message": "Paiement capturé avec succès.",
             "payment": PaymentSerializer(payment).data if payment else None
         })
+
+    # ===================================
+    # 💳 Créer un paiement Stripe
+    # ===================================
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="create-payment-stripe",
+        permission_classes=[AllowAny]
+    )
+    def create_payment_stripe(self, request):
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+
+        email = request.data.get("email")
+        amount_mad = request.data.get("amount")
+
+        if not email or not amount_mad:
+            return Response(
+                {"error": "email ou amount manquant."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = User.objects.filter(email=email).first()
+        if not user:
+            return Response(
+                {"error": "Utilisateur introuvable."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        cart = Cart.objects.filter(user=user).first()
+
+        amount_usd = self.convert_mad_to_usd(amount_mad)
+
+        intent = stripe.PaymentIntent.create(
+            amount=int(float(amount_usd) * 100),
+            currency="usd",
+            payment_method_types=["card"],
+            description=f"Achat meubles étudiant ({amount_mad} MAD)",
+        )
+
+        payment = Payment.objects.create(
+            user=user,
+            cart=cart,
+            stripe_payment_intent_id=intent.id,
+            payment_method="stripe",
+            amount=amount_mad,
+            currency="MAD",
+            status="PENDING"
+        )
+
+        return Response(
+            {
+                "client_secret": intent.client_secret,
+                "payment_id": payment.id
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+    # ===================================
+    # ✅ Confirmer paiement Stripe
+    # ===================================
+    @action(
+        detail=False,
+        methods=["post"],
+        url_path="confirm-stripe-payment",
+        permission_classes=[AllowAny]
+    )
+    def confirm_stripe_payment(self, request):
+        payment_intent_id = request.data.get("payment_intent_id")
+
+        payment = Payment.objects.filter(
+            stripe_payment_intent_id=payment_intent_id
+        ).first()
+
+        if not payment:
+            return Response({"error": "Paiement introuvable"}, status=404)
+
+        payment.status = "COMPLETED"
+        payment.save()
+
+        return Response({"message": "Paiement Stripe confirmé"})
